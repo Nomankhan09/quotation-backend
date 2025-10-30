@@ -73,7 +73,7 @@ class QuotationController extends Controller
                     }),
                 ];
             });
-            \Log::info("Fetched " . count($formattedQuotations) . " quotations");
+
             return response()->json([
                 'message' => 'Quotations retrieved successfully',
                 'quotations' => $formattedQuotations,

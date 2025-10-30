@@ -13,6 +13,9 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
 
 Route::middleware('auth:api')->group(function () {
+
+    Route::put('/user/company-info', [AuthController::class, 'updateCompanyInfo']);
+    
     // Dashboard
     Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
 
