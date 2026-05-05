@@ -6,10 +6,30 @@ use Illuminate\Database\Eloquent\Model;
 
 class Lead extends Model
 {
-    protected $fillable = ['user_id','full_name','company_name','email','phone','notes'];
+    protected $fillable = [
+        'user_id',
+        'full_name',
+        'company_name',
+        'email',
+        'phone',
+        'notes',
+        'stage',
+        'job_title',
+        'location',
+        'source',
+        'profile_image'
+    ];
+    protected $appends = ['profile_image_url'];
 
-    public function user() {
+    public function user()
+    {
         return $this->belongsTo(User::class);
     }
-}
 
+    public function getProfileImageUrlAttribute()
+    {
+        return $this->profile_image
+            ? url($this->profile_image)
+            : null;
+    }
+}

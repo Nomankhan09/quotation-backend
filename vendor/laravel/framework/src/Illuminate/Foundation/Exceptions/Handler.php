@@ -1025,7 +1025,7 @@ class Handler implements ExceptionHandlerContract
             'line' => $e->getLine(),
             'trace' => (new Collection($e->getTrace()))->map(fn ($trace) => Arr::except($trace, ['args']))->all(),
         ] : [
-            'message' => $this->isHttpException($e) ? $e->getMessage() : 'Server Error',
+            'message' => $this->isHttpException($e) ? $e->getMessage() : 'Internal Server Error',
         ];
     }
 

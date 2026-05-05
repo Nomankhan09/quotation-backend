@@ -19,7 +19,7 @@ class TermsController extends Controller
             $query->where('text', 'like', "%{$search}%");
         }
 
-        $terms = $query->latest()->get();
+        $terms = $query->get();
 
         return response()->json($terms);
     }
@@ -57,7 +57,7 @@ class TermsController extends Controller
 			});
 		}
 
-		$paymentTerms = $query->oldest()->get();
+		$paymentTerms = $query->get();
 
 		return response()->json($paymentTerms);
 	}

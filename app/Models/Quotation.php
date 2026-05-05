@@ -18,11 +18,14 @@ class Quotation extends Model
         'discount_amount',
         'total_amount',
         'status',
-        'terms'
+        'terms',
+        'specifications',
+        'stage',
     ];
 
     protected $casts = [
         'terms' => 'array',
+        'specifications' => 'array',
     ];
 
     public function products()
@@ -32,7 +35,10 @@ class Quotation extends Model
 
     public function paymentTerms()
     {
-        return $this->hasMany(QuotationPaymentTerm::class);
+        return $this->hasMany(
+            QuotationPaymentTerm::class,
+            'quotation_id'
+        );
     }
 
     public function lead()

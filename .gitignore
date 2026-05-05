@@ -1,0 +1,56 @@
+# Laravel specific
+/vendor
+/node_modules
+/public/storage
+/storage/*.key
+/storage/logs
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+
+# Environment files
+.env
+.env.backup
+.env.production
+.env.staging
+
+# Laravel Horizon / Telescope (if used)
+/horizon.log
+/telescope
+
+# Composer
+composer.phar
+composer.lock
+
+# npm / yarn
+package-lock.json
+yarn.lock
+
+# IDE / OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# PHPUnit
+/phpunit.xml
+.phpunit.result.cache
+
+# Build / compiled assets
+/public/hot
+/public/css/*
+/public/js/*
+
+# Laravel Sail (if used)
+docker-compose.override.yml
+
+# Misc
+Homestead.json
+Homestead.yaml
+auth.json

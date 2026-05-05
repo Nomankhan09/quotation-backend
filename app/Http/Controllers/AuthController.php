@@ -13,7 +13,8 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    public function register(Request $request) {
+    public function register(Request $request)
+    {
         $user = User::create([
             'first_name' => $request->first_name,
             'last_name'  => $request->last_name,
@@ -46,9 +47,11 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'company_name' => 'required|string|max:255',
             'company_address' => 'sometimes|string|max:1000',
+            'company_type' => 'nullable|string',
             'zip_code' => 'sometimes|string|max:20',
             'company_phone' => 'sometimes|string|max:20',
             'website' => 'sometimes|string|max:255',
+            'pdf_file_name_format' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -63,45 +66,47 @@ class AuthController extends Controller
             $updateData = $request->only([
                 'company_name',
                 'company_address',
-                'zip_code', 
+                'zip_code',
                 'company_phone',
-                'website'
+                'website',
+                'company_type',
+                'pdf_file_name_format'
             ]);
 
             // Handle logo if provided
             if ($request->has('company_logo') && $request->company_logo) {
                 $logoData = $request->company_logo;
-                
+
                 // Check if it's a base64 image
                 if (preg_match('/^data:image\/(\w+);base64,/', $logoData, $type)) {
                     $imageData = substr($logoData, strpos($logoData, ',') + 1);
                     $imageType = strtolower($type[1]); // jpg, png, gif
-                    
+
                     // Check if image type is valid
                     if (!in_array($imageType, ['jpg', 'jpeg', 'png', 'gif'])) {
                         return response()->json([
                             'message' => 'Invalid image type. Only JPG, PNG and GIF are allowed.'
                         ], 422);
                     }
-                    
+
                     $imageData = base64_decode($imageData);
-                    
+
                     if ($imageData === false) {
                         return response()->json([
                             'message' => 'Invalid image data'
                         ], 422);
                     }
-                    
+
                     // Generate unique filename
                     $filename = 'company-logo-' . $user->id . '-' . Str::random(10) . '.' . $imageType;
                     $directory = public_path('company-logos');
                     $filePath = $directory . '/' . $filename;
-                    
+
                     // Create directory if it doesn't exist
                     if (!file_exists($directory)) {
                         mkdir($directory, 0755, true);
                     }
-                    
+
                     // Delete old logo if exists
                     if ($user->company_logo) {
                         $oldFilePath = public_path($user->company_logo);
@@ -109,10 +114,10 @@ class AuthController extends Controller
                             unlink($oldFilePath);
                         }
                     }
-                    
+
                     // Store new logo in public folder
                     file_put_contents($filePath, $imageData);
-                    
+
                     // Store relative path in database
                     $updateData['company_logo'] = 'company-logos/' . $filename;
                 } else {
@@ -144,7 +149,6 @@ class AuthController extends Controller
                 'message' => 'Company information updated successfully',
                 'user' => $userData
             ], 200);
-
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to update company information',

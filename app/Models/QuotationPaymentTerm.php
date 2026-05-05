@@ -12,11 +12,20 @@ class QuotationPaymentTerm extends Model
     protected $fillable = [
         'quotation_id',
         'description',
-        'value'
+        'value',
+        'payment_term_id'
     ];
 
     public function quotation()
     {
         return $this->belongsTo(Quotation::class);
+    }
+
+    public function paymentTerm()
+    {
+        return $this->belongsTo(
+            PaymentTerm::class,
+            'payment_term_id'
+        );
     }
 }
