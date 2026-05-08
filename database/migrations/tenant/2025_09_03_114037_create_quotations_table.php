@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('quotations', function (Blueprint $table) {
+        Schema::connection('tenant')->create('quotations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('lead_id')->nullable()->constrained('leads')->onDelete('set null');
@@ -25,7 +25,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('quotation_products', function (Blueprint $table) {
+        Schema::connection('tenant')->create('quotation_products', function (Blueprint $table) {
             $table->id();
             $table->foreignId('quotation_id')->constrained('quotations')->onDelete('cascade');
             $table->foreignId('product_id')->nullable()->constrained('products')->onDelete('set null');
@@ -38,7 +38,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('quotation_payment_terms', function (Blueprint $table) {
+        Schema::connection('tenant')->create('quotation_payment_terms', function (Blueprint $table) {
             $table->id();
             $table->foreignId('quotation_id')->constrained('quotations')->onDelete('cascade');
             $table->string('description');
@@ -52,8 +52,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('quotation_payment_terms');
-        Schema::dropIfExists('quotation_products');
-        Schema::dropIfExists('quotations');
+        Schema::connection('tenant')->dropIfExists('quotation_payment_terms');
+        Schema::connection('tenant')->dropIfExists('quotation_products');
+        Schema::connection('tenant')->dropIfExists('quotations');
     }
 };

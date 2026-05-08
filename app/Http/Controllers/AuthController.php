@@ -1,145 +1,148 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\Tenant;
 use App\Models\User;
+use App\Services\TenantDatabaseManager;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
-    {
-        $user = User::create([
-            'first_name' => $request->first_name,
-            'last_name'  => $request->last_name,
-            'email'      => $request->email,
-            'phone'      => $request->phone,
-            'password'   => Hash::make($request->password),
-        ]);
-        return response()->json($user, 201);
-    }
+    public function __construct(
+        protected TenantDatabaseManager $manager
+    ) {}
 
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
+        $request->validate([
+            'email'    => 'required|email',
+            'password' => 'required',
+        ]);
 
-        if (!$token = auth()->attempt($credentials)) {
-            return response()->json(['message' => 'Invalid Credentials'], 401);
+        // Step 1: Central DB mein tenant dhundo by email
+        $tenant = Tenant::where('email', $request->email)->first();
+
+        if (!$tenant) {
+            return response()->json([
+                'message' => 'Invalid credentials'
+            ], 401);
+        }
+
+        // Step 2: Status check karo
+        if ($tenant->isSuspended()) {
+            return response()->json([
+                'message' => 'Account suspended. Contact support.',
+                'code'    => 'ACCOUNT_SUSPENDED'
+            ], 403);
+        }
+
+        if ($tenant->isTrialExpired()) {
+            return response()->json([
+                'message' => 'Trial expired. Please contact support.',
+                'code'    => 'TRIAL_EXPIRED'
+            ], 403);
+        }
+
+        // Step 3: Tenant DB pe switch karo
+        $this->manager->connect($tenant);
+
+        // Step 4: Tenant DB mein password verify karo
+        $token = JWTAuth::claims([
+            'tenant_id' => $tenant->id,
+            'tenant_db' => $tenant->db_name,
+        ])->attempt([
+            'email'    => $request->email,
+            'password' => $request->password,
+        ]);
+
+        if (!$token) {
+            return response()->json([
+                'message' => 'Invalid credentials'
+            ], 401);
         }
 
         return response()->json([
-            'token' => $token,
-            'user'  => auth()->user()
+            'token'  => $token,
+            'user'   => auth('api')->user(),
+            'tenant' => [
+                'id'     => $tenant->id,
+                'name'   => $tenant->name,
+                'plan'   => $tenant->plan->name ?? 'trial',
+                'status' => $tenant->status,
+            ],
         ]);
     }
 
-    /**
-     * Update company information for authenticated user
-     */
+    // Registration public se band — sirf Super Admin banata hai tenants
+    public function register(Request $request)
+    {
+        return response()->json([
+            'message' => 'Self registration is disabled.'
+        ], 403);
+    }
+
+    // Baaki existing methods same rehte hain
     public function updateCompanyInfo(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'company_name' => 'required|string|max:255',
+            'company_name'    => 'required|string|max:255',
             'company_address' => 'sometimes|string|max:1000',
-            'company_type' => 'nullable|string',
-            'zip_code' => 'sometimes|string|max:20',
-            'company_phone' => 'sometimes|string|max:20',
-            'website' => 'sometimes|string|max:255',
+            'company_type'    => 'nullable|string',
+            'zip_code'        => 'sometimes|string|max:20',
+            'company_phone'   => 'sometimes|string|max:20',
+            'website'         => 'sometimes|string|max:255',
             'pdf_file_name_format' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation failed',
-                'errors' => $validator->errors()
+                'errors'  => $validator->errors()
             ], 422);
         }
 
         try {
-            $user = auth()->user();
+            $user       = auth()->user();
             $updateData = $request->only([
-                'company_name',
-                'company_address',
-                'zip_code',
-                'company_phone',
-                'website',
-                'company_type',
+                'company_name', 'company_address',
+                'zip_code', 'company_phone',
+                'website', 'company_type',
                 'pdf_file_name_format'
             ]);
 
-            // Handle logo if provided
             if ($request->has('company_logo') && $request->company_logo) {
                 $logoData = $request->company_logo;
-
-                // Check if it's a base64 image
                 if (preg_match('/^data:image\/(\w+);base64,/', $logoData, $type)) {
                     $imageData = substr($logoData, strpos($logoData, ',') + 1);
-                    $imageType = strtolower($type[1]); // jpg, png, gif
-
-                    // Check if image type is valid
+                    $imageType = strtolower($type[1]);
                     if (!in_array($imageType, ['jpg', 'jpeg', 'png', 'gif'])) {
                         return response()->json([
-                            'message' => 'Invalid image type. Only JPG, PNG and GIF are allowed.'
+                            'message' => 'Invalid image type.'
                         ], 422);
                     }
-
                     $imageData = base64_decode($imageData);
-
-                    if ($imageData === false) {
-                        return response()->json([
-                            'message' => 'Invalid image data'
-                        ], 422);
-                    }
-
-                    // Generate unique filename
-                    $filename = 'company-logo-' . $user->id . '-' . Str::random(10) . '.' . $imageType;
+                    $filename  = 'company-logo-' . $user->id . '-' . Str::random(10) . '.' . $imageType;
                     $directory = public_path('company-logos');
-                    $filePath = $directory . '/' . $filename;
-
-                    // Create directory if it doesn't exist
                     if (!file_exists($directory)) {
                         mkdir($directory, 0755, true);
                     }
-
-                    // Delete old logo if exists
                     if ($user->company_logo) {
-                        $oldFilePath = public_path($user->company_logo);
-                        if (file_exists($oldFilePath)) {
-                            unlink($oldFilePath);
-                        }
+                        $oldPath = public_path($user->company_logo);
+                        if (file_exists($oldPath)) unlink($oldPath);
                     }
-
-                    // Store new logo in public folder
-                    file_put_contents($filePath, $imageData);
-
-                    // Store relative path in database
+                    file_put_contents($directory . '/' . $filename, $imageData);
                     $updateData['company_logo'] = 'company-logos/' . $filename;
-                } else {
-                    // If it's not base64, assume it's already a file path/URL
-                    $updateData['company_logo'] = $logoData;
                 }
-            } elseif ($request->has('company_logo') && empty($request->company_logo)) {
-                // If company_logo is empty string, remove the logo
-                if ($user->company_logo) {
-                    $oldFilePath = public_path($user->company_logo);
-                    if (file_exists($oldFilePath)) {
-                        unlink($oldFilePath);
-                    }
-                }
-                $updateData['company_logo'] = null;
             }
 
-            // Update user data
             $user->update($updateData);
             $user->refresh();
 
-            // Prepare response with full logo URL if exists
             $userData = $user->toArray();
             if ($user->company_logo) {
                 $userData['company_logo_url'] = url($user->company_logo);
@@ -147,22 +150,20 @@ class AuthController extends Controller
 
             return response()->json([
                 'message' => 'Company information updated successfully',
-                'user' => $userData
-            ], 200);
+                'user'    => $userData
+            ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to update company information',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ], 500);
         }
     }
-
-    /**
-     * Get current user with company information
-     */
-    public function getCurrentUser()
-    {
-        $user = auth()->user();
-        return response()->json(['user' => $user], 200);
-    }
 }
+    
+    // public function getCurrentUser()
+    // {
+    //     $user = auth()->user();
+    //     return response()->json(['user' => $user], 200);
+    // }
