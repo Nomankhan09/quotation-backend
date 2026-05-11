@@ -20,7 +20,13 @@ class Task extends Model
     ];
     public $timestamps = true;
 
-    public function contact() {
+    public function contact()
+    {
         return $this->belongsTo(Lead::class, 'contact_id');
+    }
+
+    public function priority()
+    {
+        return $this->belongsTo(TaskPriority::class, 'priority');
     }
 }

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Events\TaskCreated;
 use App\Models\Task;
+use App\Models\TaskPriority;
+use App\Models\TaskStatus;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,9 +18,9 @@ class TaskController extends Controller
         $validatedData = $request->validate([
             'contact_id' => 'nullable|integer',
             'title' => 'required|string|max:255',
-            'status' => 'required|string|in:pending,completed',
+            'status' => 'required|string',
             'due_date' => 'nullable|date',
-            'priority' => 'nullable|string',
+            'priority' => 'nullable|integer',
             'notes' => 'nullable|string',
             'notification_id' => 'nullable|string'
         ]);
@@ -43,7 +45,7 @@ class TaskController extends Controller
 
     public function getTasks()
     {
-        $tasks = Task::with('contact')->where('user_id', auth()->id())->orderBy('id', 'desc')->get();
+        $tasks = Task::with('contact', 'priority')->where('user_id', auth()->id())->orderBy('id', 'desc')->get();
         return response()->json(['status' => 200, 'tasks' => $tasks], 200);
     }
 
@@ -52,9 +54,9 @@ class TaskController extends Controller
         // Validate the request data
         $validatedData = $request->validate([
             'title' => 'sometimes|required|string|max:255',
-            'status' => 'sometimes|required|string|in:pending,completed',
+            'status' => 'sometimes|required|string',
             'due_date' => 'nullable|date',
-            'priority' => 'nullable|string',
+            'priority' => 'nullable|integer',
             'notes' => 'nullable|string',
             'notification_id' => 'nullable|string',
             'contact_id' => 'nullable|integer',
@@ -95,5 +97,27 @@ class TaskController extends Controller
             ->get()->limit(3);
 
         return response()->json(['status' => 200, 'message' => 'Today tasks', 'tasks' => $tasks], 200);
+    }
+
+    public function getTaskStatus()
+    {
+        $task_status = TaskStatus::all();
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'All task status',
+            'data' => $task_status
+        ]);
+    }
+
+    public function getTaskPriority()
+    {
+        $task_priority = TaskPriority::all();
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'All task priority',
+            'data' => $task_priority
+        ]);
     }
 }

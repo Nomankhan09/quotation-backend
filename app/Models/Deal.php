@@ -19,4 +19,19 @@ class Deal extends Model
         'description',
     ];
     public $timestamps = true;
+
+    public function lead()
+    {
+        return $this->belongsTo(Lead::class);
+    }
+
+    public function quotation()
+    {
+        return $this->hasMany(Quotation::class, 'deal_id')->latest();
+    }
+
+    public function stage()
+    {
+        return $this->belongsTo(DealStage::class);
+    }
 }

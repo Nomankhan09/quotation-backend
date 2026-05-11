@@ -96,6 +96,10 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/tasks/lead/{lead_id}', [TaskController::class, 'getTaskByLead']);
     Route::get('/tasks/today', [TaskController::class, 'todayTasks']);
 
+    // Task status and priority
+    Route::get('/tasks/status', [TaskController::class, 'getTaskStatus']);
+    Route::get('/tasks/priority', [TaskController::class, 'getTaskPriority']);
+
     // Activity Logs
     Route::get('/activity/logs', [LeadController::class, 'getLogs']);
 
@@ -116,6 +120,8 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/deals/{id}', [DealController::class, 'show']);
     Route::put('/deals/{id}', [DealController::class, 'update']);
     Route::delete('/deals/{id}', [DealController::class, 'destroy']);
+    Route::delete('/deals/{id}', [DealController::class, 'destroy']);
+    Route::patch('/deals/stage/{id}', [DealController::class, 'dealStageChange']);
 
     // Deal Stage
     Route::get('/deal-stage', [DealStageController::class, 'getDealStage']);

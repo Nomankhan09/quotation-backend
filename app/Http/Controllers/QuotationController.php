@@ -125,6 +125,7 @@ class QuotationController extends Controller
         try {
             $quotation = Quotation::with([
                 'lead:id,full_name,email,phone,company_name',
+                'deal:id,title',
                 'products.product:id,product_name,description,unit_price,category_id',
                 'paymentTerms.paymentTerm',
             ])
@@ -165,6 +166,7 @@ class QuotationController extends Controller
                 'validUntil' => $quotation->valid_until ?? now()->addDays(30)->format('Y-m-d'),
                 'created_at' => $quotation->created_at->toISOString(),
                 'notes' => $quotation->notes ?? $this->generateNotesFromQuotation($quotation),
+                'deal' => $quotation->deal,
                 'lead' => [
                     'id' => $quotation->lead->id,
                     'full_name' => $quotation->lead->full_name,
@@ -250,6 +252,7 @@ class QuotationController extends Controller
             'products.*.totalPrice' => 'required|numeric',
             'specifications' => 'nullable|array',
             'specifications.*' => 'integer|exists:specifications,id',
+            'deal_id' => 'nullable|integer'
         ]);
 
         try {
@@ -270,6 +273,7 @@ class QuotationController extends Controller
                 'terms' => $data['terms'] ?? [],
                 'specifications' => $data['specifications'] ?? [],
                 'valid_until' => now()->addDays(30), // Default 30 days validity
+                'deal_id' => $data['deal_id']
             ]);
 
             foreach ($data['products'] as $product) {
@@ -343,6 +347,7 @@ class QuotationController extends Controller
             'products.*.totalPrice' => 'required|numeric',
             'specifications' => 'nullable|array',
             'specifications.*' => 'integer|exists:specifications,id',
+            'deal_id' => 'nullable|integer'
         ]);
 
         try {
@@ -366,6 +371,7 @@ class QuotationController extends Controller
                 'status' => $data['status'] ?? $quotation->status,
                 'terms' => $data['terms'] ?? $quotation->terms,
                 'specifications' => $data['specifications'] ?? $quotation->specifications,
+                'deal_id' => $data['deal_id']
             ]);
 
             // Delete existing products and payment terms
@@ -471,20 +477,30 @@ class QuotationController extends Controller
         return implode(' • ', $notes);
     }
 
-    public function getQuotationsByLead($leadId)
+    public function getQuotationsByLead(Request $request, $leadId)
     {
+        $dealId = $request->deal_id;
+
         $quotations = Quotation::with(
-                'lead',
-                'products.product:id,product_name'
-            )->where("lead_id", $leadId)->get();
+            'lead',
+            'products.product:id,product_name'
+        )
+            ->where('lead_id', $leadId)
+            ->where(function ($q) use ($dealId) {
 
-        if (!$quotations) {
-            return response()->json([
-                'status' => 404,
-                'message' => 'No Quotation found'
-            ]);
-        }
+                // unassigned quotations
+                $q->whereNull('deal_id');
 
-        return response()->json(['status' => 200, 'data' => $quotations]);
+                // already attached to current deal
+                if ($dealId) {
+                    $q->orWhere('deal_id', $dealId);
+                }
+            })
+            ->get();
+
+        return response()->json([
+            'status' => 200,
+            'data' => $quotations
+        ]);
     }
 }
