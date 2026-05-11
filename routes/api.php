@@ -1,8 +1,8 @@
 <?php
 
-use App\Http\Controllers\AppErrorController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AppErrorController;
 use App\Http\Controllers\CallLogController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\CategoryController;
@@ -19,82 +19,121 @@ use App\Http\Controllers\QuotationStatusController;
 use App\Http\Controllers\SpecificationController;
 use App\Http\Controllers\TaskController;
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login',    [AuthController::class, 'login']);
-
-// error log
+// ── PUBLIC ────────────────────────────────────────────────
+Route::post('/login',      [AuthController::class, 'login']);
+Route::post('/register',   [AuthController::class, 'register']);
 Route::post('/app-errors', [AppErrorController::class, 'store']);
 
-Route::middleware('auth:api')->group(function () {
+// ── SUPER ADMIN ───────────────────────────────────────────
+Route::prefix('superadmin')->group(function () {
+
+    Route::post('/login',
+        [\App\Http\Controllers\SuperAdmin\AuthController::class, 'login']
+    );
+
+    Route::middleware('auth.superadmin')->group(function () {
+Route::group([], function () {
+        Route::get('/me',
+            [\App\Http\Controllers\SuperAdmin\AuthController::class, 'me']
+        );
+
+        // Tenants
+        Route::get('/tenants',
+            [\App\Http\Controllers\SuperAdmin\TenantController::class, 'index']
+        );
+        Route::get('/tenants/{tenant}',
+            [\App\Http\Controllers\SuperAdmin\TenantController::class, 'show']
+        );
+        Route::post('/tenants',
+            [\App\Http\Controllers\SuperAdmin\TenantController::class, 'store']
+        );
+        Route::post('/tenants/{tenant}/suspend',
+            [\App\Http\Controllers\SuperAdmin\TenantController::class, 'suspend']
+        );
+        Route::post('/tenants/{tenant}/activate',
+            [\App\Http\Controllers\SuperAdmin\TenantController::class, 'activate']
+        );
+        Route::delete('/tenants/{tenant}',
+            [\App\Http\Controllers\SuperAdmin\TenantController::class, 'destroy']
+        );
+
+        // Plans
+        Route::get('/plans',
+            [\App\Http\Controllers\SuperAdmin\PlanController::class, 'index']
+        );
+        Route::post('/plans',
+            [\App\Http\Controllers\SuperAdmin\PlanController::class, 'store']
+        );
+        Route::put('/plans/{plan}',
+            [\App\Http\Controllers\SuperAdmin\PlanController::class, 'update']
+        );
+        Route::delete('/plans/{plan}',
+            [\App\Http\Controllers\SuperAdmin\PlanController::class, 'destroy']
+        );
+});
+    });
+});
+
+// ── TENANT API ────────────────────────────────────────────
+Route::middleware(['auth:api', 'resolve.tenant'])->group(function () {
 
     Route::put('/user/company-info', [AuthController::class, 'updateCompanyInfo']);
 
-    // Dashboard
     Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
 
-    // Leads
-    Route::get('/leads', [LeadController::class, 'index']);
-    Route::post('/leads', [LeadController::class, 'store']);
+    Route::get('/leads',         [LeadController::class, 'index']);
+    Route::post('/leads',        [LeadController::class, 'store']);
     Route::delete('/leads/{id}', [LeadController::class, 'destroy']);
-    Route::put('/leads/{id}', [LeadController::class, 'update']);
+    Route::put('/leads/{id}',    [LeadController::class, 'update']);
 
-    // Categories
-    Route::get('/categories', [CategoryController::class, 'index']);
-    Route::post('/categories', [CategoryController::class, 'store']);
-    Route::put('/categories/{id}', [CategoryController::class, 'update']);
+    Route::get('/categories',         [CategoryController::class, 'index']);
+    Route::post('/categories',        [CategoryController::class, 'store']);
+    Route::put('/categories/{id}',    [CategoryController::class, 'update']);
     Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 
-    // Products
-    Route::get('/products', [ProductController::class, 'index']);
-    Route::post('/products', [ProductController::class, 'store']);
-    Route::post('/products/{id}', [ProductController::class, 'update']);
+    Route::get('/products',         [ProductController::class, 'index']);
+    Route::post('/products',        [ProductController::class, 'store']);
+    Route::post('/products/{id}',   [ProductController::class, 'update']);
     Route::delete('/products/{id}', [ProductController::class, 'destroy']);
 
-    // Quotations
-    Route::get('/quotations', [QuotationController::class, 'index']);
-    Route::get('/quotations/stage', [QuotationController::class, 'getQuotationByStage']);
-    Route::patch('/quotations/stage/{id}', [QuotationController::class, 'updateStage']);
-    Route::get('/quotations/{id}', [QuotationController::class, 'show']);
-    Route::post('/quotations', [QuotationController::class, 'store']);
-    Route::put('/quotations/{id}', [QuotationController::class, 'update']);
+    Route::get('/quotations',               [QuotationController::class, 'index']);
+    Route::get('/quotations/stage',         [QuotationController::class, 'getQuotationByStage']);
+    Route::patch('/quotations/stage/{id}',  [QuotationController::class, 'updateStage']);
+    Route::get('/quotations/{id}',          [QuotationController::class, 'show']);
+    Route::post('/quotations',              [QuotationController::class, 'store']);
+    Route::put('/quotations/{id}',          [QuotationController::class, 'update']);
     Route::get('/quotations/lead/{leadId}', [QuotationController::class, 'getQuotationsByLead']);
 
-    // Terms routes
-    Route::get('/terms', [TermsController::class, 'getTerms']);
-    Route::post('/terms', [TermsController::class, 'storeTerm']);
+    Route::get('/terms',         [TermsController::class, 'getTerms']);
+    Route::post('/terms',        [TermsController::class, 'storeTerm']);
     Route::delete('/terms/{id}', [TermsController::class, 'destroyTerm']);
 
-    // Payment Terms routes
-    Route::get('/payment-terms', [TermsController::class, 'getPaymentTerms']);
-    Route::post('/payment-terms', [TermsController::class, 'storePaymentTerm']);
+    Route::get('/payment-terms',         [TermsController::class, 'getPaymentTerms']);
+    Route::post('/payment-terms',        [TermsController::class, 'storePaymentTerm']);
     Route::delete('/payment-terms/{id}', [TermsController::class, 'destroyPaymentTerm']);
 
-    // Specification routes
-    Route::post('/specifications', [SpecificationController::class, 'addSpecification']);
-    Route::get('/specifications', [SpecificationController::class, 'getSpecifications']);
+    Route::post('/specifications',        [SpecificationController::class, 'addSpecification']);
+    Route::get('/specifications',         [SpecificationController::class, 'getSpecifications']);
     Route::delete('/specifications/{id}', [SpecificationController::class, 'deleteSpecification']);
-    Route::put('/specifications/{id}', [SpecificationController::class, 'updateSpecification']);
+    Route::put('/specifications/{id}',    [SpecificationController::class, 'updateSpecification']);
 
-    // Follow-ups routes
-    Route::post('/follow-ups', [FollowUpsController::class, 'createFollowUp']);
-    Route::get('/follow-ups', [FollowUpsController::class, 'getFollowUps']);
-    Route::put('/follow-ups/{id}', [FollowUpsController::class, 'updateFollowUp']);
-    Route::delete('/follow-ups/{id}', [FollowUpsController::class, 'deleteFollowUp']);
+    Route::post('/follow-ups',              [FollowUpsController::class, 'createFollowUp']);
+    Route::get('/follow-ups',               [FollowUpsController::class, 'getFollowUps']);
+    Route::put('/follow-ups/{id}',          [FollowUpsController::class, 'updateFollowUp']);
+    Route::delete('/follow-ups/{id}',       [FollowUpsController::class, 'deleteFollowUp']);
     Route::get('/follow-ups/lead/{leadId}', [FollowUpsController::class, 'getFollowUpsByLead']);
 
-    // Lead notes
-    Route::post('/notes', [LeadNotesController::class, 'createLeadNote']);
+    Route::post('/notes',               [LeadNotesController::class, 'createLeadNote']);
     Route::get('/notes/lead/{lead_id}', [LeadNotesController::class, 'getNotesByLead']);
-    Route::put('/notes/{id}', [LeadNotesController::class, 'updateLeadNote']);
-    Route::delete('/notes/{id}', [LeadNotesController::class, 'deleteLeadNote']);
+    Route::put('/notes/{id}',           [LeadNotesController::class, 'updateLeadNote']);
+    Route::delete('/notes/{id}',        [LeadNotesController::class, 'deleteLeadNote']);
 
-    // Task 
-    Route::post('/tasks', [TaskController::class, 'createTask']);
-    Route::get('/tasks', [TaskController::class, 'getTasks']);
-    Route::put('/tasks/{id}', [TaskController::class, 'updateTask']);
-    Route::delete('/tasks/{id}', [TaskController::class, 'deleteTask']);
+    Route::post('/tasks',               [TaskController::class, 'createTask']);
+    Route::get('/tasks',                [TaskController::class, 'getTasks']);
+    Route::put('/tasks/{id}',           [TaskController::class, 'updateTask']);
+    Route::delete('/tasks/{id}',        [TaskController::class, 'deleteTask']);
     Route::get('/tasks/lead/{lead_id}', [TaskController::class, 'getTaskByLead']);
-    Route::get('/tasks/today', [TaskController::class, 'todayTasks']);
+    Route::get('/tasks/today',          [TaskController::class, 'todayTasks']);
 
     // Task status and priority
     Route::get('/tasks/status', [TaskController::class, 'getTaskStatus']);
@@ -109,20 +148,17 @@ Route::middleware('auth:api')->group(function () {
     // Quotation Status
     Route::get('/quotation-status', [QuotationStatusController::class, 'getStatus']);
 
-    // call log
-    Route::post('/call-log', [CallLogController::class, 'store']);
-    Route::get('/call-log', [CallLogController::class, 'index']);
+    Route::post('/call-log',        [CallLogController::class, 'store']);
+    Route::get('/call-log',         [CallLogController::class, 'index']);
     Route::delete('/call-log/{id}', [CallLogController::class, 'destroy']);
 
-    // Deals
-    Route::get('/deals', [DealController::class, 'index']);
-    Route::post('/deals', [DealController::class, 'store']);
-    Route::get('/deals/{id}', [DealController::class, 'show']);
-    Route::put('/deals/{id}', [DealController::class, 'update']);
+    Route::get('/deals',         [DealController::class, 'index']);
+    Route::post('/deals',        [DealController::class, 'store']);
+    Route::get('/deals/{id}',    [DealController::class, 'show']);
+    Route::put('/deals/{id}',    [DealController::class, 'update']);
     Route::delete('/deals/{id}', [DealController::class, 'destroy']);
     Route::delete('/deals/{id}', [DealController::class, 'destroy']);
     Route::patch('/deals/stage/{id}', [DealController::class, 'dealStageChange']);
 
-    // Deal Stage
     Route::get('/deal-stage', [DealStageController::class, 'getDealStage']);
 });

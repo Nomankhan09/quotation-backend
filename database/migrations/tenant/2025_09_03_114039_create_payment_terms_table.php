@@ -8,16 +8,17 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::create('terms', function (Blueprint $table) {
+        Schema::connection('tenant')->create('payment_terms', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->text('text');
+            $table->string('description');
+            $table->text('value');
             $table->timestamps();
         });
     }
 
     public function down()
     {
-        Schema::dropIfExists('terms');
+        Schema::connection('tenant')->dropIfExists('payment_terms');
     }
 };
