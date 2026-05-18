@@ -1,12 +1,16 @@
 <?php
+
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Company;
 use App\Models\Tenant;
 use App\Models\Subscription;
+use App\Models\TenantUser;
 use App\Services\TenantDatabaseManager;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 
@@ -20,8 +24,8 @@ class TenantController extends Controller
     public function index()
     {
         $tenants = Tenant::with('plan', 'subscriptions')
-                         ->latest()
-                         ->get();
+            ->latest()
+            ->get();
 
         return response()->json([
             'tenants' => $tenants
@@ -39,7 +43,7 @@ class TenantController extends Controller
     // POST /api/superadmin/tenants
     public function store(Request $request)
     {
-       
+
         $request->validate([
             'name'       => 'required|string|max:255',
             'email'      => 'required|email|unique:tenants,email',
@@ -48,13 +52,23 @@ class TenantController extends Controller
             'password'   => 'required|string|min:8',
             'first_name' => 'required|string',
             'last_name'  => 'nullable|string',
+            'db_name' => [
+                'required',
+                'string',
+                'max:64',
+                'unique:tenants,db_name',
+            ],
+            'db_username' => [
+                'required',
+                'string',
+                'max:64',
+            ],
+            'db_password' => ['nullable', 'string'],
         ]);
 
-        // Unique DB name generate karo
-        $dbName = 'tenant_'
-            . Str::slug($request->name, '_')
-            . '_'
-            . strtolower(Str::random(6));
+        $dbName = strtolower($request->db_name);
+        $dbUsername = strtolower($request->db_username);
+        $dbPassword = $request->db_password;
 
         // 1. Central DB mein tenant record banao
         $tenant = Tenant::create([
@@ -63,6 +77,8 @@ class TenantController extends Controller
             'phone'         => $request->phone,
             'plan_id'       => $request->plan_id,
             'db_name'       => $dbName,
+            'db_username'   => $dbUsername,
+            'db_password'   => Crypt::encryptString($dbPassword),
             'status'        => 'trial',
             'trial_ends_at' => now()->addDays(14),
         ]);
@@ -72,12 +88,38 @@ class TenantController extends Controller
 
         // 3. Tenant DB mein pehla user (admin) banao
         $this->manager->connect($tenant);
-        User::on('tenant')->create([
+        $user = User::on('tenant')->create([
             'first_name' => $request->first_name,
             'last_name'  => $request->last_name ?? '',
             'email'      => $request->email,
             'phone'      => $request->phone,
-            'password'   => Hash::make($request->password),
+            'password'   => $request->password ? Hash::make($request->password) : null,
+        ]);
+
+        Company::on('tenant')->create([
+            'company_name'           => $request->company_name,
+            'company_address'        => $request->company_address,
+            'zip_code'               => $request->zip_code,
+            'company_email'          => $request->company_email,
+            'company_phone'          => $request->company_phone,
+            'website'                => $request->website,
+            'company_logo'           => null,
+            'company_type'           => $request->company_type,
+            'pdf_file_name_format'   => $request->pdf_file_name_format ?? 'Quotation_{date}',
+            'gst_number'            => $request->gst_number,
+
+            // bank details
+            'bank_name'             => $request->bank_name,
+            'account_number'        => $request->account_number,
+            'ifsc_code'            => $request->ifsc_code,
+            'account_holder_name'   => $request->account_holder_name,
+            'swift_code'           => $request->swift_code,
+        ]);
+
+        TenantUser::create([
+            'tenant_id' => $tenant->id,
+            'user_id'   => $user->id,
+            'email'    => $user->email,
         ]);
 
         // 4. Subscription banao central DB mein

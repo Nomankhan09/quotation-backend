@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class TaskStatus extends Model
 {
+    protected $connection = 'tenant';
     protected $table = 'task_status';
     protected $primaryKey = 'id';
     protected $fillable = [

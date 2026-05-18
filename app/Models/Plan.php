@@ -5,6 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Plan extends Model
 {
+    protected $connection = 'mysql';
     protected $fillable = [
         'name', 'price',
         'max_users', 'max_quotations',

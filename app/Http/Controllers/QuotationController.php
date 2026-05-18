@@ -25,9 +25,7 @@ class QuotationController extends Controller
                 'lead:id,full_name,email,phone,company_name',
                 'products.product:id,product_name,description,unit_price',
                 'paymentTerms'
-            ])
-                ->where('user_id', auth()->id())
-                ->orderBy('created_at', 'desc');
+            ])->orderBy('created_at', 'desc');
 
             // Add search functionality
             if (!empty($search)) {
@@ -68,6 +66,7 @@ class QuotationController extends Controller
                             'totalPrice' => (float) $quotationProduct->total_price,
                         ];
                     }),
+                    'stage' => $quotation->stage,
                     'paymentTerms' => $quotation->paymentTerms->map(function ($term) {
                         return [
                             'description' => $term->description,
@@ -101,8 +100,7 @@ class QuotationController extends Controller
     {
         $quotations = Quotation::with([
             'lead:id,full_name,email,phone,company_name',
-        ])->where("user_id", auth()->id())
-            ->whereNotNull("stage")
+        ]) ->whereNotNull("stage")
             ->get();
 
         $grouped = [
@@ -129,7 +127,6 @@ class QuotationController extends Controller
                 'products.product:id,product_name,description,unit_price,category_id',
                 'paymentTerms.paymentTerm',
             ])
-                ->where('user_id', auth()->id())
                 ->where('id', $id)
                 ->firstOrFail();
 
@@ -252,7 +249,7 @@ class QuotationController extends Controller
             'products.*.totalPrice' => 'required|numeric',
             'specifications' => 'nullable|array',
             'specifications.*' => 'integer|exists:specifications,id',
-            'deal_id' => 'nullable|integer'
+            // 'deal_id' => 'nullable|integer'
         ]);
 
         try {
@@ -273,7 +270,7 @@ class QuotationController extends Controller
                 'terms' => $data['terms'] ?? [],
                 'specifications' => $data['specifications'] ?? [],
                 'valid_until' => now()->addDays(30), // Default 30 days validity
-                'deal_id' => $data['deal_id']
+                // 'deal_id' => $data['deal_id']
             ]);
 
             foreach ($data['products'] as $product) {
@@ -347,7 +344,7 @@ class QuotationController extends Controller
             'products.*.totalPrice' => 'required|numeric',
             'specifications' => 'nullable|array',
             'specifications.*' => 'integer|exists:specifications,id',
-            'deal_id' => 'nullable|integer'
+            // 'deal_id' => 'nullable|integer'
         ]);
 
         try {
@@ -371,7 +368,7 @@ class QuotationController extends Controller
                 'status' => $data['status'] ?? $quotation->status,
                 'terms' => $data['terms'] ?? $quotation->terms,
                 'specifications' => $data['specifications'] ?? $quotation->specifications,
-                'deal_id' => $data['deal_id']
+                // 'deal_id' => $data['deal_id']
             ]);
 
             // Delete existing products and payment terms

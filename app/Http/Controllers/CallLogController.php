@@ -30,7 +30,7 @@ class CallLogController extends Controller
 
     public function index(Request $request)
     {
-        $query = CallLog::where('user_id', auth()->id());
+        $query = CallLog::query();
 
         if ($request->lead_id) {
             $query->where('lead_id', $request->lead_id);

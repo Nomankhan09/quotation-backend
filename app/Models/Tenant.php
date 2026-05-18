@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -6,9 +7,20 @@ use Illuminate\Database\Eloquent\Model;
 class Tenant extends Model
 {
     protected $fillable = [
-        'name', 'email', 'phone',
-        'db_name', 'status',
-        'plan_id', 'trial_ends_at'
+        'name',
+        'email',
+        'phone',
+        'db_name',
+        'db_username',
+        'db_password',
+        'status',
+        'plan_id',
+        'trial_ends_at'
+    ];
+    protected $connection = 'mysql';
+
+    protected $hidden = [
+        'db_password',
     ];
 
     protected $casts = [
@@ -32,6 +44,10 @@ class Tenant extends Model
 
     public function isTrialExpired(): bool
     {
+        if (!$this->trial_ends_at) {
+            return false;
+        }
+
         return $this->status === 'trial'
             && now()->isAfter($this->trial_ends_at);
     }

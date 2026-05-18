@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Specification extends Model
 {
+    protected $connection = 'tenant';
     protected $table = 'specifications';
     protected $primaryKey = 'id';
     protected $fillable = [

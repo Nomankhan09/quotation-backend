@@ -12,7 +12,7 @@ class CategoryController extends Controller
     {
         $userId = auth()->id();
 
-        $query = Category::where('user_id', $userId);
+        $query = Category::query();
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
@@ -31,7 +31,7 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $name = strtolower(trim($request->category_name));
-        $matchedCategory = Category::whereRaw('LOWER(category_name) = ?', [$name])->first();
+        $matchedCategory = Category::where('user_id',auth()->id())->whereRaw('LOWER(category_name) = ?', [$name])->first();
 
         if ($matchedCategory) {
             return response()->json([

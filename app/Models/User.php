@@ -26,6 +26,7 @@ class User extends Authenticatable implements JWTSubject
         'pdf_file_name_format'
     ];
 
+    protected $connection = 'tenant';
     protected $hidden = ['password'];
 
     public function leads()

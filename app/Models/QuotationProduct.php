@@ -9,6 +9,7 @@ class QuotationProduct extends Model
 {
     use HasFactory;
 
+    protected $connection = 'tenant';
     protected $fillable = [
         'quotation_id',
         'product_id',

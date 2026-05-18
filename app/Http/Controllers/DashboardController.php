@@ -26,11 +26,11 @@ class DashboardController extends Controller
         $startOfLastWeek = Carbon::now()->subWeek()->startOfWeek();
         $endOfLastWeek   = Carbon::now()->subWeek()->endOfWeek();
 
-        $totalLeads      = Lead::where('user_id', $userId)->count();
-        $totalProducts   = Product::where('user_id', $userId)->count();
-        $totalCategories = Category::where('user_id', $userId)->count();
-        $totalConversions = Quotation::where('user_id', $userId)->where('status', 'sent')->count();
-        $dealQuery = Deal::where('user_id', $userId);
+        $totalLeads      = Lead::count();
+        $totalProducts   = Product::count();
+        $totalCategories = Category::count();
+        $totalConversions = Quotation::where('status', 'sent')->count();
+        $dealQuery = Deal::query();
         $totalDeals = (clone $dealQuery)->whereNotIn('stage_id', [6, 7])->count();
         $wonDeals = (clone $dealQuery)->where('stage_id', 6)->count();
         $totalRevenue = Quotation::whereIn('id', function ($query) {
@@ -39,20 +39,16 @@ class DashboardController extends Controller
                 ->groupBy('deal_id');
         })
             ->whereHas('deal', function ($query) use ($userId) {
-                $query->where('user_id', $userId)
-                    ->where('stage_id', 6);
+                $query->where('stage_id', 6);
             })
             ->sum('total_amount');
 
-        $recentLeads = Lead::where('user_id', $userId)
-            ->latest()
+        $recentLeads = Lead::latest()
             ->take(3)
             ->get(['id', 'full_name as name', 'company_name as company', 'email']);
 
         // top 3 today tasks
-        $recentTasks = Task::where('user_id', $userId)
-            ->whereDate('created_at', Carbon::today())
-            ->limit(3)->get();
+        $recentTasks = Task::whereDate('created_at', Carbon::today())->get();
 
         // pipeline overview
         $latestQuotationSubquery = DB::table('quotations as q1')
@@ -75,8 +71,7 @@ class DashboardController extends Controller
                 function ($join) {
                     $join->on('deals.id', '=', 'latest_quotes.deal_id');
                 }
-            )->where('deals.user_id', $userId)
-            ->select(
+            )->select(
                 'deal_stages.id',
                 'deal_stages.stage_name as name',
                 'deal_stages.color',

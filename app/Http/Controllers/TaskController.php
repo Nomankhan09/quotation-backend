@@ -45,7 +45,7 @@ class TaskController extends Controller
 
     public function getTasks()
     {
-        $tasks = Task::with('contact', 'priority')->where('user_id', auth()->id())->orderBy('id', 'desc')->get();
+        $tasks = Task::with('contact', 'priority')->orderBy('id', 'desc')->get();
         return response()->json(['status' => 200, 'tasks' => $tasks], 200);
     }
 
@@ -83,7 +83,7 @@ class TaskController extends Controller
     public function getTaskByLead($lead_id)
     {
         $user_id = auth()->id();
-        $leadTask = Task::where('user_id', $user_id)->where('contact_id', $lead_id)
+        $leadTask = Task::where('contact_id', $lead_id)
             ->orderBy('id', 'desc')
             ->get();
         return response()->json(['status' => 200, 'tasks' => $leadTask], 200);
@@ -91,10 +91,7 @@ class TaskController extends Controller
 
     public function todayTasks()
     {
-        $user_id = auth()->id();
-        $tasks = Task::where('user_id', $user_id)
-            ->whereDate('created_at', Carbon::today())
-            ->get()->limit(3);
+        $tasks = Task::whereDate('created_at', Carbon::today())->get();
 
         return response()->json(['status' => 200, 'message' => 'Today tasks', 'tasks' => $tasks], 200);
     }

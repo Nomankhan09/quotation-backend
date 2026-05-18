@@ -9,6 +9,7 @@ class QuotationPaymentTerm extends Model
 {
     use HasFactory;
 
+    protected $connection = 'tenant';
     protected $fillable = [
         'quotation_id',
         'description',

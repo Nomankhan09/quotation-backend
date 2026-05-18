@@ -12,7 +12,7 @@ class TermsController extends Controller
     public function getTerms(Request $request) {
         $userId = auth()->id();
 
-        $query = Term::where('user_id', $userId);
+        $query = Term::query();
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
@@ -47,7 +47,7 @@ class TermsController extends Controller
     public function getPaymentTerms(Request $request) {
 		$userId = auth()->id();
 
-		$query = PaymentTerm::where('user_id', $userId);
+		$query = PaymentTerm::query();
 
 		if ($request->filled('search')) {
 			$search = $request->search;

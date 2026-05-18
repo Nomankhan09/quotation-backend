@@ -63,19 +63,32 @@ return [
             ]) : [],
         ],
 
+        'mysql_admin' => [
+            'driver' => 'mysql',
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => null,
+            'username' => env('MYSQL_ADMIN_USERNAME'),
+            'password' => env('MYSQL_ADMIN_PASSWORD'),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+        ],
+
         'tenant' => [
-        'driver'    => 'mysql',
-        'host'      => env('DB_HOST', '127.0.0.1'),
-        'port'      => env('DB_PORT', '3306'),
-        'database'  => '',   // runtime pe set hoga
-        'username'  => env('DB_USERNAME', 'root'),
-        'password'  => env('DB_PASSWORD', ''),
-        'charset'   => 'utf8mb4',
-        'collation' => 'utf8mb4_unicode_ci',
-        'prefix'    => '',
-        'strict'    => true,
-        'engine'    => null,
-    ],
+            'driver'    => 'mysql',
+            'host'      => env('DB_HOST', '127.0.0.1'),
+            'port'      => env('DB_PORT', '3306'),
+            'database'  => '',   // runtime pe set hoga
+            'username'  => env('DB_USERNAME', 'root'),
+            'password'  => env('DB_PASSWORD', ''),
+            'charset'   => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix'    => '',
+            'strict'    => true,
+            'engine'    => null,
+        ],
 
         'mariadb' => [
             'driver' => 'mariadb',
@@ -162,7 +175,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
+            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')) . '-database-'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 

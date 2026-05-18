@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class DealStage extends Model
 {
+    protected $connection = 'tenant';
     protected $table = 'deal_stages';
     protected $primaryKey = 'id';
     protected $fillable = [

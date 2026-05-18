@@ -9,6 +9,7 @@ class Term extends Model
 {
     use HasFactory;
 
+    protected $connection = 'tenant';
     protected $fillable = [
         'user_id',
         'text'

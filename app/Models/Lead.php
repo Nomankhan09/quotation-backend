@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Lead extends Model
 {
+    protected $connection = 'tenant';
     protected $fillable = [
         'user_id',
         'full_name',

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
+    protected $connection = 'tenant';
     protected $fillable = ['user_id','category_id','product_name','unit_price','description'];
 
     public function user() {

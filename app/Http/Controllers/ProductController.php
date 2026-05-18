@@ -13,7 +13,7 @@ class ProductController extends Controller
 
         $userId = auth()->id();
 
-        $query = Product::with('category')->where('user_id', $userId);
+        $query = Product::query()->with('category');
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
@@ -35,7 +35,8 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $name = strtolower(trim($request->product_name));
-        $matchedProduct = Product::whereRaw('LOWER(product_name) = ?', [$name])
+        $matchedProduct = Product::where('user_id', auth()->id())
+            ->whereRaw('LOWER(product_name) = ?', [$name])
             ->where('category_id', $request->category_id)
             ->first();
 

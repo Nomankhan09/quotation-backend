@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class LeadNotes extends Model
 {
+    protected $connection = 'tenant';
     protected $table = 'notes';
     protected $primaryKey = 'id';
     protected $fillable = [

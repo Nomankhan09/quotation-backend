@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class FollowUps extends Model
 {
+    protected $connection = 'tenant';
     protected $table = 'follow_ups';
     protected $primaryKey = 'id';
     protected $fillable = [

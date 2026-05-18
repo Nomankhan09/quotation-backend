@@ -41,7 +41,7 @@ class FollowUpsController extends Controller
 
     public function getFollowUps()
     {
-        $followUps = FollowUps::where('user_id', auth()->id())->get();
+        $followUps = FollowUps::get();
         return response()->json(['status' => 200, 'follow_ups' => $followUps], 200);
     }
 
@@ -59,7 +59,7 @@ class FollowUpsController extends Controller
         ]);
 
         // Find the follow-up and ensure it belongs to the authenticated user
-        $followUp = FollowUps::where('id', $id)->where('user_id', auth()->id())->first();
+        $followUp = FollowUps::where('id', $id)->first();
 
         if (!$followUp) {
             return response()->json(['status' => 404, 'message' => 'Follow-up not found'], 200);
@@ -106,8 +106,7 @@ class FollowUpsController extends Controller
     public function getFollowUpsByLead($leadId)
     {
         // Assuming there's a relationship between FollowUps and Leads
-        $followUps = FollowUps::where('user_id', auth()->id())
-            ->where("contact_id", $leadId)
+        $followUps = FollowUps::where("contact_id", $leadId)
             ->orderBy('id', 'desc')
             ->get();
 

@@ -8,8 +8,7 @@ class ContactStatusController extends Controller
 {
     public function getStatus()
     {
-        $user_id = auth()->id();
-        $status = ContactStatus::where('user_id', $user_id)->get();
+        $status = ContactStatus::get();
         return response()->json(['status' => 201, 'message' => 'All status', 'data' => $status]);
     }
 }

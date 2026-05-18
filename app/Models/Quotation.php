@@ -9,6 +9,7 @@ class Quotation extends Model
 {
     use HasFactory;
 
+    protected $connection = 'tenant';
     protected $fillable = [
         'user_id',
         'lead_id',

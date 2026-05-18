@@ -1,14 +1,19 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 class Subscription extends Model
 {
+    protected $connection = 'mysql';
     protected $fillable = [
-        'tenant_id', 'plan_id',
-        'status', 'starts_at',
-        'ends_at', 'payment_ref'
+        'tenant_id',
+        'plan_id',
+        'status',
+        'starts_at',
+        'ends_at',
+        'payment_ref'
     ];
 
     protected $casts = [

@@ -14,7 +14,7 @@ class LeadController extends Controller
     {
         $userId = auth()->id();
 
-        $query = Lead::where('user_id', $userId);
+        $query = Lead::query();
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
@@ -153,8 +153,7 @@ class LeadController extends Controller
 
     public function getLogs(Request $request)
     {
-        $activityLogs = Activity::where("user_id", auth()->id())
-            ->where("lead_id", $request->lead_id)
+        $activityLogs = Activity::where("lead_id", $request->lead_id)
             ->orderBy('id', 'desc')
             ->get();
 

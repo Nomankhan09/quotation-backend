@@ -6,14 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model
 {
-    protected $fillable = ['user_id','category_name','description','color'];
+    protected $connection = 'tenant';
+    protected $fillable = ['user_id', 'category_name', 'description', 'color'];
 
-    public function user() {
+    public function user()
+    {
         return $this->belongsTo(User::class);
     }
 
-    public function products() {
+    public function products()
+    {
         return $this->hasMany(Product::class);
     }
 }
-

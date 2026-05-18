@@ -32,7 +32,7 @@ class LeadNotesController extends Controller
     public function getNotesByLead($lead_id)
     {
         $user_id = auth()->id();
-        $leadNotes = LeadNotes::where('user_id', $user_id)->where('lead_id', $lead_id)
+        $leadNotes = LeadNotes::where('lead_id', $lead_id)
             ->orderBy('id', 'desc')
             ->get();
         return response()->json(['status' => 200, 'notes' => $leadNotes], 200);

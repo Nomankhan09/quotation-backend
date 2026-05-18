@@ -18,10 +18,25 @@ return new class extends Migration
             $table->string('company_name')->nullable();
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
+            $table->string('job_title')->nullable();
+            $table->string('location')->nullable();
+            $table->string('source')->nullable();
+            $table->string('stage')->default('new');
+            $table->string('profile_image')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
 
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            // Foreign Key
+            $table->foreign('user_id')
+                ->references('id')
+                ->on('users')
+                ->onDelete('cascade');
+            // Indexes
+            $table->index('user_id');
+            $table->index('email');
+            $table->index('phone');
+            $table->index('stage');
+            $table->index('source');
         });
     }
 

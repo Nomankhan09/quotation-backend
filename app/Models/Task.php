@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Task extends Model
 {
+    protected $connection = 'tenant';
     protected $table = 'task';
     protected $primaryKey = 'id';
     protected $fillable = [

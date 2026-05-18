@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class CallLog extends Model
 {
+    protected $connection = 'tenant';
     protected $table = 'call_log';
     protected $primaryKey = 'id';
     protected $fillable = [

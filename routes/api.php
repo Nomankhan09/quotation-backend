@@ -18,64 +18,93 @@ use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\QuotationStatusController;
 use App\Http\Controllers\SpecificationController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TenantUserSyncController;
+use Illuminate\Http\Request;
 
 // ── PUBLIC ────────────────────────────────────────────────
 Route::post('/login',      [AuthController::class, 'login']);
-Route::post('/register',   [AuthController::class, 'register']);
 Route::post('/app-errors', [AppErrorController::class, 'store']);
+// Route::post('/cryptpass', [AuthController::class, 'getCryptpass']);
+
+
+// for sync
+Route::post(
+    '/tenant/{tenantId}/sync-users',
+    [TenantUserSyncController::class, 'sync']
+);
 
 // ── SUPER ADMIN ───────────────────────────────────────────
 Route::prefix('superadmin')->group(function () {
 
-    Route::post('/login',
+    Route::post(
+        '/login',
         [\App\Http\Controllers\SuperAdmin\AuthController::class, 'login']
     );
 
     Route::middleware('auth.superadmin')->group(function () {
-Route::group([], function () {
-        Route::get('/me',
-            [\App\Http\Controllers\SuperAdmin\AuthController::class, 'me']
-        );
+        Route::group([], function () {
+            Route::get(
+                '/me',
+                [\App\Http\Controllers\SuperAdmin\AuthController::class, 'me']
+            );
 
-        // Tenants
-        Route::get('/tenants',
-            [\App\Http\Controllers\SuperAdmin\TenantController::class, 'index']
-        );
-        Route::get('/tenants/{tenant}',
-            [\App\Http\Controllers\SuperAdmin\TenantController::class, 'show']
-        );
-        Route::post('/tenants',
-            [\App\Http\Controllers\SuperAdmin\TenantController::class, 'store']
-        );
-        Route::post('/tenants/{tenant}/suspend',
-            [\App\Http\Controllers\SuperAdmin\TenantController::class, 'suspend']
-        );
-        Route::post('/tenants/{tenant}/activate',
-            [\App\Http\Controllers\SuperAdmin\TenantController::class, 'activate']
-        );
-        Route::delete('/tenants/{tenant}',
-            [\App\Http\Controllers\SuperAdmin\TenantController::class, 'destroy']
-        );
+            // Tenants
+            Route::get(
+                '/tenants',
+                [\App\Http\Controllers\SuperAdmin\TenantController::class, 'index']
+            );
+            Route::get(
+                '/tenants/{tenant}',
+                [\App\Http\Controllers\SuperAdmin\TenantController::class, 'show']
+            );
+            Route::post(
+                '/tenants',
+                [\App\Http\Controllers\SuperAdmin\TenantController::class, 'store']
+            );
+            Route::post(
+                '/tenants/{tenant}/suspend',
+                [\App\Http\Controllers\SuperAdmin\TenantController::class, 'suspend']
+            );
+            Route::post(
+                '/tenants/{tenant}/activate',
+                [\App\Http\Controllers\SuperAdmin\TenantController::class, 'activate']
+            );
+            Route::delete(
+                '/tenants/{tenant}',
+                [\App\Http\Controllers\SuperAdmin\TenantController::class, 'destroy']
+            );
 
-        // Plans
-        Route::get('/plans',
-            [\App\Http\Controllers\SuperAdmin\PlanController::class, 'index']
-        );
-        Route::post('/plans',
-            [\App\Http\Controllers\SuperAdmin\PlanController::class, 'store']
-        );
-        Route::put('/plans/{plan}',
-            [\App\Http\Controllers\SuperAdmin\PlanController::class, 'update']
-        );
-        Route::delete('/plans/{plan}',
-            [\App\Http\Controllers\SuperAdmin\PlanController::class, 'destroy']
-        );
-});
+            // Plans
+            Route::get(
+                '/plans',
+                [\App\Http\Controllers\SuperAdmin\PlanController::class, 'index']
+            );
+            Route::post(
+                '/plans',
+                [\App\Http\Controllers\SuperAdmin\PlanController::class, 'store']
+            );
+            Route::put(
+                '/plans/{plan}',
+                [\App\Http\Controllers\SuperAdmin\PlanController::class, 'update']
+            );
+            Route::delete(
+                '/plans/{plan}',
+                [\App\Http\Controllers\SuperAdmin\PlanController::class, 'destroy']
+            );
+        });
     });
 });
 
+// Route::middleware('auth:api')
+//     ->get('/me', [AuthController::class, 'me']);
+
 // ── TENANT API ────────────────────────────────────────────
-Route::middleware(['auth:api', 'resolve.tenant'])->group(function () {
+Route::middleware(['tenant.auth'])->group(function () {
+
+    Route::get('/me', [AuthController::class, 'me']);
+
+    // register tenant wise
+    Route::post('/register',   [AuthController::class, 'register']);
 
     Route::put('/user/company-info', [AuthController::class, 'updateCompanyInfo']);
 
@@ -152,6 +181,7 @@ Route::middleware(['auth:api', 'resolve.tenant'])->group(function () {
     Route::get('/call-log',         [CallLogController::class, 'index']);
     Route::delete('/call-log/{id}', [CallLogController::class, 'destroy']);
 
+    // deal
     Route::get('/deals',         [DealController::class, 'index']);
     Route::post('/deals',        [DealController::class, 'store']);
     Route::get('/deals/{id}',    [DealController::class, 'show']);
@@ -160,5 +190,6 @@ Route::middleware(['auth:api', 'resolve.tenant'])->group(function () {
     Route::delete('/deals/{id}', [DealController::class, 'destroy']);
     Route::patch('/deals/stage/{id}', [DealController::class, 'dealStageChange']);
 
+    // deal stage
     Route::get('/deal-stage', [DealStageController::class, 'getDealStage']);
 });

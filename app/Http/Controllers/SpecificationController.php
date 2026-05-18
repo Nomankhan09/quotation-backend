@@ -31,7 +31,7 @@ class SpecificationController extends Controller
     public function getSpecifications(Request $request)
     {
         $userId = auth()->id();
-        $query = Specification::where('user_id', $userId);
+        $query = Specification::query();
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;

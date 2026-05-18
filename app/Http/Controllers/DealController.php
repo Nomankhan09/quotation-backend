@@ -17,9 +17,7 @@ class DealController extends Controller
             'quotation' => function ($q) {
                 $q->select('id', 'deal_id', 'total_amount');
             }
-        ])
-            ->where('user_id', auth()->id())
-            ->when($request->stage_id, fn($q) => $q->where('stage_id', $request->stage_id));
+        ])->when($request->stage_id, fn($q) => $q->where('stage_id', $request->stage_id));
 
         return response()->json(
             $query->latest()->get()
@@ -57,9 +55,7 @@ class DealController extends Controller
             $quotations = Quotation::whereIn(
                 'id',
                 $validated['quotation_id']
-            )
-                ->where('user_id', auth()->id())
-                ->get();
+            )->get();
 
             foreach ($quotations as $quotation) {
                 $quotation->update([
@@ -91,7 +87,6 @@ class DealController extends Controller
             }
         ])
             ->where("id", $id)
-            ->where('user_id', auth()->id())
             ->first();
 
         if (!$deal) {

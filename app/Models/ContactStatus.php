@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ContactStatus extends Model
 {
+    protected $connection = 'tenant';
     protected $table = 'contact_status';
     protected $primaryKey = 'id';
     protected $fillable = [

@@ -6,6 +6,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class SuperAdmin extends Authenticatable implements JWTSubject
 {
+    protected $connection = 'mysql';
     protected $fillable = ['name', 'email', 'password'];
     protected $hidden   = ['password'];
 

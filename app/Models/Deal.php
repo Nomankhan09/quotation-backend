@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Deal extends Model
 {
+    protected $connection = 'tenant';
     protected $table = 'deals';
     protected $primaryKey = 'id';
     protected $fillable = [
