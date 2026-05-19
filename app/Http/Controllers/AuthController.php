@@ -2,15 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ForgotPasswordOtpMail;
+use App\Mail\PublicUserLeadMail;
 use App\Models\Company;
+use App\Models\PublicUser;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Models\User;
 use App\Services\TenantDatabaseManager;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -24,14 +30,6 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        // $credentials = $request->only('email', 'password');
-        // if (!$token = auth()->attempt($credentials)) {
-        //     return response()->json(['message' => 'Invalid Credentials'], 401);
-        // }
-        // return response()->json([
-        //     'token' => $token,
-        //     'user'  => auth()->user()
-        // ]);
         $request->validate([
             'email'    => 'required|email',
             'password' => 'required',
@@ -49,11 +47,6 @@ class AuthController extends Controller
             ], 401);
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | STEP 2: Get tenant from central DB
-    |--------------------------------------------------------------------------
-    */
 
         $tenant = Tenant::find($tenantUser->tenant_id);
 
@@ -64,11 +57,7 @@ class AuthController extends Controller
             ], 404);
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | STEP 3: Status checks
-    |--------------------------------------------------------------------------
-    */
+
 
         if ($tenant->isSuspended()) {
 
@@ -86,19 +75,8 @@ class AuthController extends Controller
             ], 403);
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | STEP 4: Connect tenant DB
-    |--------------------------------------------------------------------------
-    */
-
         $this->manager->connect($tenant);
 
-        /*
-    |--------------------------------------------------------------------------
-    | STEP 5: Authenticate in tenant DB
-    |--------------------------------------------------------------------------
-    */
 
         $token = JWTAuth::claims([
             'tenant_id' => $tenant->id,
@@ -115,11 +93,7 @@ class AuthController extends Controller
             ], 401);
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | STEP 6: Return response
-    |--------------------------------------------------------------------------
-    */
+
         $company = Company::on('tenant')->first();
 
         return response()->json([
@@ -139,43 +113,40 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'tenant_id'  => 'required|exists:tenants,id',
             'first_name' => 'required|string|max:255',
             'last_name'  => 'nullable|string|max:255',
-            'email'      => 'required|email',
+            'email'      => 'required|email|unique:public_users,email',
             'phone'      => 'nullable|string|max:20',
-            'password'   => 'required|string|min:8',
+            'company_name' => 'nullable|string|max:255',
+            'message' => 'nullable|string|max:1000',
         ]);
 
-        // Get tenant
-        $tenant = Tenant::findOrFail($request->tenant_id);
+        $oldPublicUser = PublicUser::where('email', $request->email)->first();
 
-        // Connect tenant DB
-        $this->manager->connect($tenant);
+        if($oldPublicUser) {
+            return response()->json([
+                'status' => 422,
+                'message' => 'A request has already been submitted using this email address. Our team will contact you shortly.',
+            ]);
+        }
 
-        // Create user inside tenant DB users table
-        $user = User::on('tenant')->create([
+        // save in central db
+        $publicUser = PublicUser::create([
             'first_name' => $request->first_name,
-            'last_name'  => $request->last_name ?? '',
-            'email'      => $request->email,
-            'phone'      => $request->phone,
-            'password'   => Hash::make($request->password),
+            'last_name' => $request->last_name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'company_name' => $request->company_name,
+            'message' => $request->message,
+            'status' => 'pending',
         ]);
 
-        // Save into central DB tenant_users table
-        $tenantUser = TenantUser::create([
-            'tenant_id'      => $tenant->id,
-            'tenant_user_id' => $user->id,
-            'first_name'     => $request->first_name,
-            'last_name'      => $request->last_name ?? '',
-            'email'          => $request->email,
-            'phone'          => $request->phone,
-            'password'       => Hash::make($request->password),
-        ]);
+        // send email to internal team
+        Mail::to('aman@flairm.com')
+            ->send(new PublicUserLeadMail($publicUser));
 
         return response()->json([
-            'message' => 'User registered successfully',
-            'user'    => $tenantUser,
+            'message' => 'Your details were sent successfully. Our team will contact you shortly.',
         ], 201);
     }
 
@@ -431,6 +402,152 @@ class AuthController extends Controller
                 'message' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $tenantUser = TenantUser::where(
+            'email',
+            $request->email
+        )->first();
+
+        if (!$tenantUser) {
+            return response()->json([
+                'message' => 'Email not found'
+            ], 404);
+        }
+
+        $otp = rand(100000, 999999);
+
+        DB::table('password_resets')->updateOrInsert(
+            ['email' => $request->email],
+            [
+                'otp' => $otp,
+                'expires_at' => Carbon::now()->addMinutes(20),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+
+        Mail::to($request->email)
+            ->send(new ForgotPasswordOtpMail($otp));
+
+        return response()->json([
+            'message' => 'OTP sent successfully'
+        ]);
+    }
+
+    // verify OTP and reset password
+    public function verifyOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required'
+        ]);
+
+        $reset = DB::table('password_resets')
+            ->where('email', $request->email)
+            ->where('otp', $request->otp)
+            ->first();
+
+        if (!$reset) {
+            return response()->json([
+                'message' => 'Invalid OTP'
+            ], 400);
+        }
+
+        if (Carbon::parse($reset->expires_at)->isPast()) {
+
+            return response()->json([
+                'message' => 'OTP expired'
+            ], 400);
+        }
+
+        return response()->json([
+            'message' => 'OTP verified'
+        ]);
+    }
+
+    // reset password
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required',
+            'password' => 'required|min:6|confirmed',
+        ]);
+
+        // check otp
+        $reset = DB::table('password_resets')
+            ->where('email', $request->email)
+            ->where('otp', $request->otp)
+            ->first();
+
+        if (!$reset) {
+            return response()->json([
+                'message' => 'Invalid OTP'
+            ], 400);
+        }
+
+        // check expiry
+        if (Carbon::parse($reset->expires_at)->isPast()) {
+            return response()->json([
+                'message' => 'OTP expired'
+            ], 400);
+        }
+
+        // central db tenant user
+        $tenantUser = TenantUser::where('email', $request->email)->first();
+
+        if (!$tenantUser) {
+            return response()->json([
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        // get tenant
+        $tenant = $tenantUser->tenant_id;
+
+        if (!$tenant) {
+            return response()->json([
+                'message' => 'Tenant not found'
+            ], 404);
+        }
+
+        $tenant_db = Tenant::where('id', $tenant)->first();
+
+        // switch tenant database dynamically
+        config([
+            'database.connections.tenant.database'
+            => $tenant_db->db_name
+        ]);
+
+        DB::purge('tenant');
+        DB::reconnect('tenant');
+
+        // update tenant user password
+        DB::connection('tenant')
+            ->table('users')
+            ->where('email', $request->email)
+            ->update([
+                'password' => Hash::make(
+                    $request->password
+                ),
+                'updated_at' => now(),
+            ]);
+
+        // delete otp
+        DB::table('password_resets')
+            ->where('email', $request->email)
+            ->delete();
+
+        return response()->json([
+            'message' => 'Password reset successful'
+        ]);
     }
 }
     

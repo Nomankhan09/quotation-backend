@@ -43,6 +43,10 @@ class TenantAuthMiddleware
 
             DB::setDefaultConnection('tenant');
 
+            config([
+                'cache.default' => 'file',
+                'session.driver' => 'file',
+            ]);
             $user = $token->authenticate();
 
             if (!$user) {
@@ -55,9 +59,9 @@ class TenantAuthMiddleware
         } catch (\Exception $e) {
 
             return response()->json([
-                'message' => 'Unauthorized',
-                'error' => $e->getMessage()
-            ], 401);
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ], 500);
         }
 
         return $next($request);

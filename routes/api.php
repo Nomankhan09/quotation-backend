@@ -23,8 +23,14 @@ use Illuminate\Http\Request;
 
 // ── PUBLIC ────────────────────────────────────────────────
 Route::post('/login',      [AuthController::class, 'login']);
+Route::post('/manual-register',      [AuthController::class, 'register']);
 Route::post('/app-errors', [AppErrorController::class, 'store']);
 // Route::post('/cryptpass', [AuthController::class, 'getCryptpass']);
+
+// forgot password
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 
 // for sync

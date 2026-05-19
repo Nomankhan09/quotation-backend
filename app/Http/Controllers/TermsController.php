@@ -65,7 +65,7 @@ class TermsController extends Controller
     public function storePaymentTerm(Request $request) {
         $request->validate([
             'description' => 'required|string|max:255',
-            'value'       => 'required|string'
+            'value'       => 'nullable|string'
         ]);
 
         $paymentTerm = PaymentTerm::create([

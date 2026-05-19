@@ -22,8 +22,6 @@ return new class extends Migration
 
             $table->string('type');
 
-            $table->date('date');
-
             $table->timestamp('timestamp');
 
             $table->timestamps();
@@ -43,7 +41,6 @@ return new class extends Migration
             $table->index('user_id');
             $table->index('lead_id');
             $table->index('type');
-            $table->index('date');
             $table->index('timestamp');
         });
     }

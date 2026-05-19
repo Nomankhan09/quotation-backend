@@ -21,7 +21,7 @@ class FollowUpsController extends Controller
             'notification_id' => 'nullable'
         ]);
 
-        $formatted_date = \Carbon\Carbon::createFromFormat('m/d/Y h:i A', $validatedData['date'])
+        $formatted_date = \Carbon\Carbon::parse($validatedData['date'])
             ->format('Y-m-d H:i:s');
 
         // Create a new follow-up

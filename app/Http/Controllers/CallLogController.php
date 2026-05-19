@@ -21,7 +21,6 @@ class CallLogController extends Controller
             'user_id' => auth()->id(),
         ]);
 
-
         return response()->json([
             'message' => 'Call log created',
             'data' => $log
