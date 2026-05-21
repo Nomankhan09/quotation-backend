@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::connection('tenant')->create('users', function (Blueprint $table) {
             $table->id();
+            $table->integer("role_id")->nullable();
             $table->string('first_name');
             $table->string('last_name');
             $table->string('email')->unique();

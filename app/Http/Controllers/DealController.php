@@ -156,8 +156,18 @@ class DealController extends Controller
 
     public function destroy($id)
     {
-        $deal = Deal::where('user_id', auth()->id())->findOrFail($id);
+        $deal = Deal::where('id', $id)->first();
 
+        if (!$deal) {
+            return response()->json([
+                'status' => 404,
+                'message' => 'Deal not found'
+            ]);
+        }
+
+        Quotation::where('deal_id', $id)->update([
+            'deal_id' => null
+        ]);
         $deal->delete();
 
         return response()->json([

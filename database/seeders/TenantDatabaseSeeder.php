@@ -18,6 +18,7 @@ class TenantDatabaseSeeder extends Seeder
             QuotationStatusSeeder::class,
             TaskPrioritySeeder::class,
             TaskStatusSeeder::class,
+            UserRoleSeeder::class
         ]);
     }
 }

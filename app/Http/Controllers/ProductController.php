@@ -69,6 +69,7 @@ class ProductController extends Controller
 
         $name = strtolower(trim($request->product_name));
         $matchedProduct = Product::whereRaw('LOWER(product_name) = ?', [$name])
+            ->where('category_id', $request->category_id)
             ->where('id', '!=', $id)->first();
 
         if ($matchedProduct) {

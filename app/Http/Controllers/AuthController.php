@@ -57,8 +57,6 @@ class AuthController extends Controller
             ], 404);
         }
 
-
-
         if ($tenant->isSuspended()) {
 
             return response()->json([
@@ -123,7 +121,7 @@ class AuthController extends Controller
 
         $oldPublicUser = PublicUser::where('email', $request->email)->first();
 
-        if($oldPublicUser) {
+        if ($oldPublicUser) {
             return response()->json([
                 'status' => 422,
                 'message' => 'A request has already been submitted using this email address. Our team will contact you shortly.',
@@ -482,7 +480,8 @@ class AuthController extends Controller
         ]);
 
         // check otp
-        $reset = DB::table('password_resets')
+        $reset =  DB::connection('mysql')
+            ->table('password_resets')
             ->where('email', $request->email)
             ->where('otp', $request->otp)
             ->first();
@@ -501,7 +500,7 @@ class AuthController extends Controller
         }
 
         // central db tenant user
-        $tenantUser = TenantUser::where('email', $request->email)->first();
+        $tenantUser = TenantUser::on('mysql')->where('email', $request->email)->first();
 
         if (!$tenantUser) {
             return response()->json([
@@ -518,7 +517,7 @@ class AuthController extends Controller
             ], 404);
         }
 
-        $tenant_db = Tenant::where('id', $tenant)->first();
+        $tenant_db = Tenant::on('mysql')->where('id', $tenant)->first();
 
         // switch tenant database dynamically
         config([

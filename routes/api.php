@@ -39,6 +39,9 @@ Route::post(
     [TenantUserSyncController::class, 'sync']
 );
 
+// for migration sync
+Route::post('/tenant/migrate', [TenantUserSyncController::class, 'migrate']);
+
 // ── SUPER ADMIN ───────────────────────────────────────────
 Route::prefix('superadmin')->group(function () {
 
@@ -128,7 +131,7 @@ Route::middleware(['tenant.auth'])->group(function () {
 
     Route::get('/products',         [ProductController::class, 'index']);
     Route::post('/products',        [ProductController::class, 'store']);
-    Route::post('/products/{id}',   [ProductController::class, 'update']);
+    Route::put('/products/{id}',   [ProductController::class, 'update']);
     Route::delete('/products/{id}', [ProductController::class, 'destroy']);
 
     Route::get('/quotations',               [QuotationController::class, 'index']);
@@ -192,7 +195,6 @@ Route::middleware(['tenant.auth'])->group(function () {
     Route::post('/deals',        [DealController::class, 'store']);
     Route::get('/deals/{id}',    [DealController::class, 'show']);
     Route::put('/deals/{id}',    [DealController::class, 'update']);
-    Route::delete('/deals/{id}', [DealController::class, 'destroy']);
     Route::delete('/deals/{id}', [DealController::class, 'destroy']);
     Route::patch('/deals/stage/{id}', [DealController::class, 'dealStageChange']);
 
